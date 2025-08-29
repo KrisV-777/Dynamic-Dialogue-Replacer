@@ -3,49 +3,24 @@
 SKSE plugin that allows for runtime replacement of dialogue subtitles and voice files. 
 
 ## Requirements
+* [xmake](https://xmake.io/#/)
+	* Add this to your `PATH`
+* [PowerShell](https://github.com/PowerShell/PowerShell/releases/latest)
+* [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
+	* Desktop development with C++
+* [CommonLibSSE](https://github.com/powerof3/CommonLibSSE/tree/dev)
+	* You need to build from the powerof3/dev branch
+* Create Environment Variables:
+  * `XSE_TES5_MODS_PATH`: Path to your MO2/Vortex `mods` folder
+  * `XSE_TES5_GAME_PATH`: Path to your SSE install directory
 
-- Any terminal of your choice (e.g., PowerShell)
-- [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
-  - Desktop development with C++
-- [CMake](https://cmake.org/)
-  - Edit the `PATH` environment variable and add the cmake.exe install path as a new value
-  - Instructions for finding and editing the `PATH` environment variable can be found [here](https://www.java.com/en/download/help/path.html)
-- [Git](https://git-scm.com/downloads)
-  - Edit the `PATH` environment variable and add the Git.exe install path as a new value
-- [Vcpkg](https://github.com/microsoft/vcpkg)
-  - Install vcpkg using the directions in vcpkg's [Quick Start Guide](https://github.com/microsoft/vcpkg#quick-start-windows)
-  - After install, add a new environment variable named `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
-
-## User Requirements
-
-- [Address Library for SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
-  - Needed for SSE/AE
-- [VR Address Library for SKSEVR](https://www.nexusmods.com/skyrimspecialedition/mods/58101)
-  - Needed for VR
-
-## Register Visual Studio as a Generator
-
-- Open `x64 Native Tools Command Prompt`
-- Run `cmake`
-- Close the cmd window
-
-## Clone and Build
-Open terminal (e.g., PowerShell) and run the following commands:
-
+## Building
 ```
-git clone https://github.com/ponzipyramid/DynamicDialogueReplacer.git --recursive
-cd CommonLibSSE-NG-Template
-.\BuildRelease.bat
+git clone https://github.com/KrisV-777/Dynamic-Dialogue-Replacer.git
+cd Dynamic-Dialogue-Replacer
+git submodule update --init --recursive
+xmake f -m release [
+	--copy_to_papyrus=(y/n)		# create/update a mod instance
+]
+xmake
 ```
-
-### CMAKE Options (optional)
-If you want an example CMakeUserPreset to start off with you can copy the `CMakeUserPresets.json.template` -> `CMakeUserPresets.json`
-#### AUTO_PLUGIN_DEPLOYMENT
-* This option is default `"OFF"`
-* Make sure `"AUTO_PLUGIN_DEPLOYMENT"` is set to `"ON"` in `CMakeUserPresets.json`
-* Change the `"SamplePluginOutputDir"` value to match your desired outputs, if you want multiple folders you can separate them by `;` is shown in the template example
-
-When using custom preset you can call BuildRelease.bat with an parameter to specify which preset to configure eg:
-`.\BuildRelease.bat ALL-WITH-AUTO-DEPLOYMENT`
-
-When switching between different presets you might need to remove the build folder
