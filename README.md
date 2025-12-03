@@ -2,6 +2,14 @@
 
 SKSE plugin that allows for runtime replacement of dialogue subtitles and voice files. 
 
+For documentation on how to use this plugin, see the [wiki](https://github.com/KrisV-777/Dynamic-Dialogue-Replacer/wiki).  
+Download mirror on [Nexus Mods](https://www.nexusmods.com/skyrimspecialedition/mods/135618).
+
+## Core Features
+* Conditionally replace NPC Dialogue & Voice Lines at runtime
+* Hide, add or edit player responses in the dialogue tree, or replace them with new dialogue
+* Dynamically change dialogue text using .lua scripts
+
 ## Requirements
 * [xmake](https://xmake.io/#/)
 	* Add this to your `PATH`
