@@ -6,6 +6,7 @@ namespace DDR
 	{
 		a_lua.set_function("has_keyword", &ActorFunctionProvider::HasKeyword);
 		a_lua.set_function("is_in_faction", &ActorFunctionProvider::IsInFaction);
+        a_lua.set_function("get_faction_rank", &ActorFunctionProvider::GetFactionRank);
 		a_lua.set_function("has_magic_effect", &ActorFunctionProvider::HasMagicEffect);
 		a_lua.set_function("get_relationship_rank", &ActorFunctionProvider::GetRelationshipRank);
 		a_lua.set_function("get_sex", &ActorFunctionProvider::GetSex);
@@ -30,6 +31,16 @@ namespace DDR
 		}
 		return form->IsInFaction(fac);
 	}
+
+    int ActorFunctionProvider::GetFactionRank(uint32_t a_id, uint32_t a_faction)
+    {
+        auto form = RE::TESForm::LookupByID<RE::Actor>(a_id);
+        auto fac = RE::TESForm::LookupByID<RE::TESFaction>(a_faction);
+        if (!form || !fac) {
+            return -1;
+        }
+        return form->GetFactionRank(fac, form->IsPlayerRef());
+    }
 
 	int ActorFunctionProvider::HasMagicEffect(uint32_t a_id, uint32_t a_magicEffect)
 	{
