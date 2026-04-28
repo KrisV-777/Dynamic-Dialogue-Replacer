@@ -84,8 +84,6 @@ option_end()
 add_requires("yaml-cpp", "sol2", "frozen", "magic_enum", "nlohmann_json")
 add_requires("luajit", { configs = { gc64 = true } })
 
-includes("lib/commonlibsse-ng")
-
 -- policies
 set_policy("package.requires_lock", true)
 set_policy("check.auto_ignore_flags", false)
