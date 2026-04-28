@@ -69,17 +69,17 @@ namespace Conditions
 		const auto comparand = a_item->data.flags.global ? a_item->data.comparisonValue.g->value : a_item->data.comparisonValue.f;
 		switch (a_item->data.flags.opCode) {
 		case RE::CONDITION_ITEM_DATA::OpCode::kEqualTo:
-			return value == comparand;
+			return *value == comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kNotEqualTo:
-			return value != comparand;
+			return *value != comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kGreaterThan:
-			return value > comparand;
+			return *value > comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kGreaterThanOrEqualTo:
-			return value >= comparand;
+			return *value >= comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kLessThan:
-			return value < comparand;
+			return *value < comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kLessThanOrEqualTo:
-			return value <= comparand;
+			return *value <= comparand;
 		default:
 			return false;
 		}
