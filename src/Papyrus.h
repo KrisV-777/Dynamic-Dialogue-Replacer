@@ -21,6 +21,8 @@ namespace DDR::Papyrus
 		REGISTERPAPYRUSFUNC(AddReplacementTopic)
 		REGISTERPAPYRUSFUNC(RemoveReplacementTopic)
 
+#undef REGISTERPAPYRUSFUNC
+
 		return true;
 	}
 }
