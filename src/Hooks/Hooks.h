@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Dialogue/DialogueManager.h"
-#include <unordered_set>
 
 namespace RE
 {
@@ -39,21 +38,5 @@ namespace DDR
 	private:
 		static inline int64_t AddTopic(RE::MenuTopicManager* a_this, RE::TESTopic* a_topic, RE::TESTopic* a_activeTopic, uint64_t a_4);
 		static inline REL::Relocation<decltype(AddTopic)> _AddTopic;
-	};
-
-	class DialogueMenuEx : public RE::DialogueMenu
-	{
-	public:
-		static inline void Install()
-		{
-			REL::Relocation<uintptr_t> vtbl(RE::VTABLE_DialogueMenu[0]);
-			_ProcessMessageFn = vtbl.write_vfunc(0x4, &ProcessMessageEx);
-		}
-
-		RE::UI_MESSAGE_RESULTS ProcessMessageEx(RE::UIMessage& a_message);
-
-	private:
-		using ProcessMessageFn = decltype(&RE::DialogueMenu::ProcessMessage);
-		static inline REL::Relocation<ProcessMessageFn> _ProcessMessageFn;
 	};
 }

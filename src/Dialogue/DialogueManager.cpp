@@ -4,7 +4,7 @@
 #include "Util/Random.h"
 
 namespace DDR
-{	
+{
 	void DialogueManager::Init()
 	{
 		logger::info("Initializing replacements");
@@ -100,7 +100,7 @@ namespace DDR
 		for (const auto&& it : node) {
 			try {
 				TextReplacement repl{ it };
-				if (!_lua.InitializeEnvironment(repl)) {
+				if (!_luaRuntime.InitializeEnvironment(repl)) {
 					logger::info("Line {}: Failed to initialize environment for script {}", 1 + it.Mark().line, repl.GetScript());
 				} else {
 					scripts++;
@@ -223,158 +223,7 @@ namespace DDR
 		const auto target = actor ? GetDialogueTarget(actor) : nullptr;
 		const uint32_t speakerId = actor ? actor->GetFormID() : 0;
 		const uint32_t targetId = target ? target->GetFormID() : 0;
-		_lua.ForEachScript([&](const TextReplacement& a_replacement, sol::environment& a_env) {
-			if (a_replacement.CanApplyReplacement(a_speaker, target, a_type)) {
-				try {
-					std::unique_lock lock{ _luaMutex };
-					a_env["context"] = std::to_underlying(a_type);
-					a_env["speaker_id"] = speakerId;
-					a_env["target_id"] = targetId;
-					sol::protected_function_result result = a_env["replace"](a_text);
-					if (!result.valid()) {
-						sol::error err = result;
-						logger::error("Failed to apply replacement - {}", err.what());
-					} else if (result.get_type() != sol::type::string) {
-						const auto type = magic_enum::enum_name(result.get_type());
-						logger::error("Failed to apply replacement - expected string, got {}", type);
-					} else {
-						a_text = result;
-					}
-				} catch (const std::exception& e) {
-					logger::error("Failed to apply replacement - {}", e.what());
-				}
-			}
-		});
-	}
-
-	LuaData::LuaData()
-	{
-		lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::table, sol::lib::math);
-
-		lua.set_function("get_formid", [](uint32_t a_id, const std::string& a_esp) -> uint32_t {
-			return RE::TESDataHandler::GetSingleton()->LookupFormID(a_id, a_esp);
-		});
-		lua.set_function("has_keyword", [](uint32_t a_id, const std::string& a_kwd, bool a_partialMatch) -> int {
-			auto form = RE::TESForm::LookupByID<RE::BGSKeywordForm>(a_id);
-			if (!form) {
-				return -1;
-			}
-			return a_partialMatch ? form->ContainsKeywordString(a_kwd) : form->HasKeywordString(a_kwd);
-		});
-		lua.set_function("is_in_faction", [](uint32_t a_id, uint32_t a_faction) -> int {
-			auto form = RE::TESForm::LookupByID<RE::Actor>(a_id);
-			auto fac = RE::TESForm::LookupByID<RE::TESFaction>(a_faction);
-			if (!form || !fac) {
-				return -1;
-			}
-			return form->IsInFaction(fac);
-		});
-		lua.set_function("has_magic_effect", [](uint32_t a_id, uint32_t a_magicEffect) -> int {
-			auto form = RE::TESForm::LookupByID<RE::Actor>(a_id);
-			auto mgEff = RE::TESForm::LookupByID<RE::EffectSetting>(a_magicEffect);
-			if (!form) {
-				return -1;
-			}
-			return form->AsMagicTarget()->HasMagicEffect(mgEff);
-		});
-		lua.set_function("get_relationship_rank", [](uint32_t a_id, uint32_t a_target) -> std::string {
-			auto form = RE::TESForm::LookupByID<RE::Actor>(a_id);
-			auto target = RE::TESForm::LookupByID<RE::Actor>(a_target);
-			if (!form || !target) {
-				return "";
-			}
-			auto formBase = form->GetActorBase();
-			auto targetBase = target->GetActorBase();
-			if (!formBase || !targetBase || !formBase->relationships) {
-				return "";
-			}
-			for (auto&& it : *formBase->relationships) {
-				if (it->npc1 == targetBase || it->npc2 == targetBase) {
-					auto lv = it->level.get();
-					std::string ret{ magic_enum::enum_name(lv) };
-					return ret;
-				}
-			}
-			return "";
-		});
-		lua.set_function("get_sex", [](uint32_t a_id) -> int {
-			auto form = RE::TESForm::LookupByID(a_id);
-			if (!form) {
-				return -1;
-			} else if (auto act = form->As<RE::Actor>()) {
-				auto base = act->GetActorBase();
-				return base ? base->GetSex() : -1;
-			} else if (auto npc = form->As<RE::TESNPC>()) {
-				return npc->GetSex();
-			}
-			return -1;
-		});
-		lua.set_function("get_name", [](uint32_t a_id) -> std::string {
-			auto form = RE::TESForm::LookupByID(a_id);
-			if (!form) {
-				return "NONE";
-			}
-			std::string ret{ form->GetName() };
-			if (ret.empty()) {
-				if (auto act = form->As<RE::Actor>()) {
-					const auto base = act->GetActorBase();
-					return base ? base->GetName() : ret;
-				}
-			}
-			return ret;
-		});
-		lua.set_function("send_mod_event", [](const std::string& event, const std::string& argStr, float argNum, uint32_t argForm) {
-			SKSE::ModCallbackEvent modEvent{
-				event,
-				argStr,
-				argNum,
-				argForm ? RE::TESForm::LookupByID(argForm) : nullptr
-			};
-			SKSE::GetModCallbackEventSource()->SendEvent(&modEvent);
-		});
-	}
-
-	bool LuaData::InitializeEnvironment(TextReplacement a_replacement)
-	{
-		sol::environment env{ lua, sol::create, lua.globals() };
-		if (!env.valid()) {
-			logger::error("Failed to create environment");
-			return false;
-		}
-		const auto scriptName = a_replacement.GetScript();
-		const auto scriptPatch = std::format("{}/{}", SCRIPT_PATH, scriptName);
-		if (!fs::exists(scriptPatch)) {
-			logger::error("Failed to load script. Invalid path - {}", scriptPatch);
-			return false;
-		}
-		lua.script_file(scriptPatch, env);
-		if (!env.valid()) {
-			logger::error("Failed to load script - {}", scriptPatch);
-			return false;
-		} else if (!env["replace"].valid()) {
-			logger::error("Failed to find replace function");
-			return false;
-		}
-		std::string scriptNameStr{ scriptName };
-		env.set_function("log_info", [=](const std::string& message) {
-			logger::info("Lua - {} - {}", scriptNameStr, message);
-		});
-		env.set_function("log_error", [=](const std::string& message) {
-			logger::error("Lua - {} - {}", scriptNameStr, message);
-		});
-		if (!env.valid()) {
-			logger::error("Failed to set functions");
-			return false;
-		}
-		scripts.emplace_back(a_replacement, env);
-		return true;
-	}
-	
-	void LuaData::ForEachScript(std::function<void(const TextReplacement&, sol::environment&)> a_func)
-	{
-		for (auto& [repl, env] : scripts) {
-			a_func(repl, env);
-		}
+		_luaRuntime.ApplyTextReplacements(a_text, a_speaker, target, a_type, speakerId, targetId);
 	}
 
 } // namespace DDR

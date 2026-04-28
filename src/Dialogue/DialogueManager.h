@@ -1,10 +1,8 @@
 #pragma once
 
-#define SOL_ALL_SAFETIES_ON 1
-#include <lua.hpp>
-#include <sol/sol.hpp>
-
 #include "Conditions/RefMap.h"
+#include "DialoguePaths.h"
+#include "Lua/LuaRuntime.h"
 #include "TextReplacement.h"
 #include "Topic.h"
 #include "TopicInfo.h"
@@ -12,22 +10,6 @@
 
 namespace DDR
 {
-	constexpr static std::string_view DIRECTORY_PATH = "Data\\SKSE\\DynamicDialogueReplacer";
-	constexpr static std::string_view SCRIPT_PATH = "Data\\SKSE\\DynamicDialogueReplacer\\Scripts";
-
-	struct LuaData
-	{
-		LuaData();
-		~LuaData() { lua.collect_garbage(); }
-
-		bool InitializeEnvironment(TextReplacement a_replacement);
-		void ForEachScript(std::function<void(const TextReplacement&, sol::environment&)> a_func);
-
-	private:
-		sol::state lua{};
-		std::vector<std::pair<TextReplacement, sol::environment>> scripts{};
-	};
-
 	class DialogueManager : 
 		public Singleton<DialogueManager>
 	{
@@ -49,8 +31,7 @@ namespace DDR
 		size_t ParseScripts(const YAML::Node& a_node);
 
 	private:
-		LuaData _lua{};
-		std::mutex _luaMutex{};
+		LuaRuntime _luaRuntime{};
 		std::map<std::string, std::vector<std::shared_ptr<TopicInfo>>> _responseReplacements;
 		std::unordered_map<RE::FormID, std::vector<std::shared_ptr<Topic>>> _topicReplacements;
 		std::unordered_map<RE::FormID, std::vector<std::shared_ptr<Topic>>> _topicReplacementOrphans;	// Replacements without a parent topic
