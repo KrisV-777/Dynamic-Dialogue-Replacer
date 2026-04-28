@@ -8,3 +8,4 @@ dist/scripts/
 dist/SKSE/Plugins/*.dll
 dist/SKSE/Plugins/*.pdb
 .release
+.env

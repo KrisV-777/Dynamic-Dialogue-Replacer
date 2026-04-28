@@ -2,18 +2,81 @@ set_xmakever("2.9.5")
 
 -- Globals
 PROJECT_NAME = "DynamicDialogueReplacer"
+PROJECT_VERSION = "1.2.0"
 
 -- Project
 set_project(PROJECT_NAME)
-set_version("1.2.0")
+set_version(PROJECT_VERSION)
 set_languages("cxx23")
 set_license("gplv3")
 set_warnings("allextra", "error")
 
+-- Includes
+includes("lib/CommonLibSSE-NG/xmake.lua")
+includes("xmake/dotenv")
+includes("xmake/papyrus")
+add_moduledirs("xmake/modules")
+
 -- Options
-option("copy_to_papyrus")
+option("papyrus_include")
+    set_category("papyrus")
+    set_description("Path to papyrus include directories",
+                    'Defaults to: "%XSE_TES5_MODS_PATH%"')
+    on_check(function(option)
+        import("dotenv.check")(option, {"$(env XSE_TES5_MODS_PATH)"})
+    end)
+option_end()
+
+option("papyrus_gamesource")
+    set_category("papyrus")
+    set_description('Path to directory containing game\'s "Source\\Scripts"',
+                    'Defaults to: "%XSE_TES5_GAME_PATH%\\Data"')
+    on_check(function(option)
+        import("dotenv.check")(option, {"$(env XSE_TES5_GAME_PATH)", "Data"})
+    end)
+option_end()
+
+option("auto_install")
+    set_category("install")
+    set_description("Automatically trigger an install after successful build",
+                    "Only if 'install_path' is set")
+    set_default(false)
+    after_check("dotenv.check")
+option_end()
+
+option("install_path")
+    set_category("install")
+    set_description("Set default installation path for commands and auto_install",
+                    'Defaults to: "%XSE_TES5_MODS_PATH%\\Dynamic-Dialogue-Replacer"')
+    on_check(function(option)
+        import("dotenv.check")(option, {"$(env XSE_TES5_MODS_PATH)", "Dynamic-Dialogue-Replacer"})
+    end)
+option_end()
+
+option("build_dll")
+    set_category("build")
+    set_description("Enable '" .. PROJECT_NAME .. "' target")
     set_default(true)
-    set_description("Copy finished build to Papyrus SKSE folder")
+option("build_papyrus")
+    set_category("build")
+    set_description("Enable 'papyrus' target")
+    set_default(true)
+
+-- ensure dotenv is loaded before imported options
+option("papyrus_path")
+    add_deps("dotenv")
+
+-- hide commonlibsse-ng options
+option("rex_ini")
+    set_showmenu(false)
+option("rex_json")
+    set_showmenu(false)
+option("rex_toml")
+    set_showmenu(false)
+option("skse_xbyak")
+    set_showmenu(false)
+option("tests")
+    set_showmenu(false)
 option_end()
 
 -- Dependencies & Includes
@@ -23,18 +86,9 @@ add_requires("luajit", { configs = { gc64 = true } })
 
 includes("lib/commonlibsse-ng")
 
-target("detours")
-    set_kind("static")
-    set_languages("c++17")
-    add_headerfiles("lib/detours/src/*.h", { prefixdir = "detours" })
-    add_includedirs("lib/detours/src")
-    add_files("lib/detours/src/*.cpp")
-    remove_files("lib/detours/src/uimports.cpp")
-    set_installdir("build/detours")
-target_end()
-
 -- policies
 set_policy("package.requires_lock", true)
+set_policy("check.auto_ignore_flags", false)
 
 -- rules
 add_rules("mode.debug", "mode.release")
@@ -48,13 +102,53 @@ elseif is_mode("release") then
     set_symbols("debug")
 end
 
+set_allowedplats("windows")
+set_allowedarchs("x64")
+set_defaultplat("windows")
+set_defaultarchs("x64")
+
 -- set_config("skse_xbyak", true)
 set_config("skyrim_se", true)
 set_config("skyrim_ae", true)
 set_config("skyrim_vr", true)
 
+--Applied to ALL targets
+rule("common")
+    after_config(function(target)
+        -- after_config to ensure install_path overwrites value set by
+        -- commonlibsse-ng.plugin
+        import("core.project.config")
+        local install_path = config.get("install_path")
+        if install_path then
+            target:set("installdir", install_path, {readonly = true})
+        end
+    end)
+
+    after_build(function(target)
+        import("core.project.config")
+        import("core.base.task")
+        local auto_install = config.get("auto_install")
+        local install_path = config.get("install_path")
+        if auto_install and install_path and target:name() ~= "commonlibsse-ng" then
+            task.run("install", {target = target:name()})
+        end
+    end)
+
+    on_install(function(target)
+        local srcfiles, dstfiles = target:installfiles()
+        if srcfiles and dstfiles then
+            for idx, srcfile in ipairs(srcfiles) do
+                os.vcp(srcfile, dstfiles[idx], {copy_if_different = true})
+            end
+        end
+    end)
+rule_end()
+add_rules("common")
+
 -- Target
 target(PROJECT_NAME)
+    set_enabled(get_config("build_dll"))
+
     -- Dependencies
     add_packages("yaml-cpp", "luajit", "sol2", "frozen", "magic_enum", "nlohmann_json")
     add_deps("detours")
@@ -64,8 +158,8 @@ target(PROJECT_NAME)
     add_deps("commonlibsse-ng")
     add_rules("commonlibsse-ng.plugin", {
         name = PROJECT_NAME,
-        author = "Scrab Joséline",
-        description = "Extended implementation of Mfg Fix with new functions and animated expression transitions."
+        author = "KrisV-777",
+        description = "SKSE Framework to (dynamically) hot replace player and NPC dialogue."
     })
 
     -- Source files
@@ -98,6 +192,7 @@ target(PROJECT_NAME)
         "cl::/wd4201", -- nonstandard extension used : nameless struct/union
         "cl::/wd4265" -- 'type': class has virtual functions, but its non-trivial destructor is not virtual; instances of this class may not be destructed correctly
     )
+
     -- Conditional flags
     if is_mode("debug") then
         add_cxxflags("cl::/bigobj")
@@ -105,44 +200,78 @@ target(PROJECT_NAME)
         add_cxxflags("cl::/Zc:inline", "cl::/JMC-", "cl::/Ob3")
     end
 
-    -- Post Build 
-    after_build(function (target)
-        local mod_folder = os.getenv("XSE_TES5_MODS_PATH")
-        local game_folder = os.getenv("XSE_TES5_GAME_PATH")
-        if game_folder then
-            -- local compiler_folder = path.join(game_folder, "Papyrus Compiler/PapyrusCompiler.exe")
-            -- local script_source = "dist/source/scripts"
-            -- local script_output = "dist/scripts"
-            -- local flags_file = path.join(game_folder, "Data/Source/Scripts/TESV_Papyrus_Flags.flg")
-            -- os.execv(compiler_folder, { script_source, 
-            --     "-i=" .. script_source .. ";" .. path.join(game_folder, "Data/Source/Scripts"), 
-            --     "-o=" .. script_output, 
-            --     "-f=" .. flags_file, 
-            --     "-optimize", "-all" })
-            local plugin_folder = "dist/SKSE/Plugins"
-            if not os.isdir(plugin_folder) then
-                os.mkdir(plugin_folder)
-            end
-            os.cp(target:targetfile(), plugin_folder)
-            os.cp(target:symbolfile(), plugin_folder)
-
-            if (is_mode("release")) then
-                local release_folder = path.join(os.projectdir(), ".release")
-                local zipfile = path.join(release_folder, target:basename() .. "-" .. target:version() .. ".7z")
-                local files = path.join(os.projectdir(), "dist/*")
-                if not os.isdir(release_folder) then
-                    os.mkdir(release_folder)
-                end
-                os.exec("7z a " .. zipfile .. " " .. files)
-            end
-        else
-            print("Warning: GamePath not defined. Skipping script compilation.")
-        end
-        if mod_folder and has_config("copy_to_papyrus") then
-            local SkyrimPath = path.join(mod_folder, target:basename())
-            os.cp("dist/*", SkyrimPath)
-        else
-            print("Warning: SkyrimPath not defined. Skipping post-build copy.")
+    on_load(function(target)
+        local clib = target:rule("commonlibsse-ng.plugin")
+        if clib then
+            -- disable unwanted events
+            clib:set("install", nil)
+            clib:set("package", nil)
+            clib:set("build_after", nil)
         end
     end)
+
+    -- Post Build
+    after_build(function (target)
+        os.vcp(target:targetfile(), "dist/SKSE/Plugins")
+        os.vcp(target:symbolfile(), "dist/SKSE/Plugins")
+    end)
 target_end()
+
+target("detours")
+    set_kind("static")
+    set_languages("c++17")
+    add_headerfiles("lib/detours/src/*.h", { prefixdir = "detours" })
+    add_includedirs("lib/detours/src")
+    add_files("lib/detours/src/*.cpp")
+    remove_files("lib/detours/src/uimports.cpp") -- This file is included and not compiled on its own
+target_end()
+
+target("papyrus")
+    set_enabled(get_config("build_papyrus"))
+    set_kind("object")
+    set_targetdir("dist/Scripts")
+    set_basename("DynamicDialogueReplacer")
+
+    --avoid rebuild on mode change
+    set_policy("build.intermediate_directory", false)
+    add_rules("papyrus")
+
+    add_files("dist/Source/Scripts/*.psc")
+    add_includedirs("dist/Source/Scripts")
+    add_includedirs("$(papyrus_gamesource)/Source/Scripts")
+
+    on_load(function(target)
+        import("core.project.config")
+
+        if not config.get("papyrus_include") then
+            cprint("${color.warning}papyrus_include is not defined")
+        end
+        if not config.get("papyrus_gamesource") then
+            cprint("${color.warning}papyrus_gamesource is not defined")
+        end
+    end)
+
+    before_build(function(target)
+        import("core.project.config")
+        assert(config.get("papyrus_include"), "papyrus_include is not defined")
+        assert(config.get("papyrus_gamesource"), "papyrus_gamesource is not defined")
+    end)
+target_end()
+
+includes("@builtin/xpack")
+
+xpack("dynamic-dialogue-replacer")
+    set_formats("zip")
+    set_extension(".7z")
+    set_basename("Dynamic Dialogue Replacer - V$(version)")
+    add_targets(PROJECT_NAME, "papyrus")
+    on_installcmd(function(package, batchcmds)
+        local installdir = package:installdir()
+        local install = import("test_ln")() and batchcmds.ln or batchcmds.cp
+        for _, v in pairs(package:targets()) do
+            srcfiles, dstfiles = v:installfiles(installdir)
+            for idx, srcfile in ipairs(srcfiles) do
+                install(batchcmds, path.absolute(srcfile), dstfiles[idx])
+            end
+        end
+    end)
