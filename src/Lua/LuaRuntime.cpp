@@ -13,6 +13,7 @@ namespace DDR
 		_functionProviders.emplace_back(std::make_unique<FormFunctionProvider>());
 		_functionProviders.emplace_back(std::make_unique<ActorFunctionProvider>());
 		_functionProviders.emplace_back(std::make_unique<EventFunctionProvider>());
+		_functionProviders.emplace_back(std::make_unique<FileFunctionProvider>());
 		RegisterFunctions();
 	}
 
