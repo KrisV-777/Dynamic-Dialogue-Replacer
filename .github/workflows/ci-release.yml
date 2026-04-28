@@ -1,0 +1,363 @@
+name: CI and Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RELEASE_ASSET_DIR: release-assets
+
+jobs:
+  project-version:
+    name: Resolve Project Version
+    runs-on: windows-latest
+    outputs:
+      project_version: ${{ steps.version.outputs.project_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from xmake.lua
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $content = Get-Content -Path xmake.lua -Raw
+          $match = [regex]::Match($content, 'PROJECT_VERSION\s*=\s*"([^"]+)"')
+          if (-not $match.Success) {
+            throw 'Could not determine PROJECT_VERSION from xmake.lua'
+          }
+
+          $projectVersion = $match.Groups[1].Value
+          write-host "Resolved project version: $projectVersion"
+          "project_version=$projectVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  compare-version:
+    name: Compare with Latest Release
+    needs: project-version
+    runs-on: windows-latest
+    outputs:
+      current_version: ${{ steps.compare.outputs.current_version }}
+      version_tag: ${{ steps.compare.outputs.version_tag }}
+      previous_release_version: ${{ steps.compare.outputs.previous_release_version }}
+      version_changed: ${{ steps.compare.outputs.version_changed }}
+    steps:
+      - name: Compare current version to latest release
+        id: compare
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $currentVersionText = '${{ needs.project-version.outputs.project_version }}'
+          $currentVersion = [version]$currentVersionText
+
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+
+          $previousReleaseVersion = ''
+          $versionChanged = 'false'
+
+          if ('${{ github.event_name }}' -eq 'push') {
+            try {
+              $latest = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -Headers $headers
+              $latestTag = [string]$latest.tag_name
+              $latestVersionText = $latestTag.TrimStart('v', 'V')
+
+              if (-not [string]::IsNullOrWhiteSpace($latestVersionText)) {
+                $latestVersion = [version]$latestVersionText
+                $previousReleaseVersion = $latestVersionText
+                if ($currentVersion -gt $latestVersion) {
+                  $versionChanged = 'true'
+                }
+              } else {
+                $versionChanged = 'true'
+              }
+            } catch {
+              if ($_.Exception.Message.Contains('404')) {
+                $versionChanged = 'true'
+              } else {
+                throw
+              }
+            }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($previousReleaseVersion)) {
+            $previousReleaseVersion = 'n/a'
+          }
+
+          Write-Host "Current version='$currentVersionText'"
+          Write-Host "Last release version='$previousReleaseVersion'"
+          Write-Host "Version changed='$versionChanged'"
+
+          "current_version=$currentVersionText" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "version_tag=v$currentVersionText" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "previous_release_version=$previousReleaseVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "version_changed=$versionChanged" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  compile-papyrus:
+    name: Compile Papyrus scripts
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Script Sources
+        id: cache-ss
+        uses: actions/cache@v4
+        with:
+          path: |
+            .github/Papyrus/SRC
+            .github/Papyrus/SRC/TESV_Papyrus_Flags.flg
+          key: script-sources-clean-v1
+
+      - name: Cache Compiler
+        id: cache-com
+        uses: actions/cache@v4
+        with:
+          path: .github/Caprica
+          key: ${{ runner.os }}-papyrus-compiler-0.3.0a
+
+      - name: Fetch Caprica
+        if: steps.cache-com.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path .github -Force | Out-Null
+          gh release download 0.3.0a -R KrisV-777/Caprica --pattern "Caprica.zip" --dir .github --clobber
+          7z x .github/Caprica.zip "-o.github\Caprica" -y
+
+          if (-not (Test-Path ".github/Caprica/Caprica.exe")) {
+            Write-Error "Caprica.exe not found after extraction."
+            exit 1
+          }
+
+      - name: Checkout Papyrus Sources
+        if: steps.cache-ss.outputs.cache-hit != 'true'
+        run: |
+          $repos = @("SRC")
+          New-Item -ItemType Directory -Path .github/Papyrus -Force | Out-Null
+          Set-Location .github/Papyrus
+          foreach ($repo in $repos) {
+            New-Item -ItemType Directory -Name $repo
+            Set-Location $repo
+            git init
+            git remote add origin https://github.com/IHateMyKite/PAPYRUS.git
+            git sparse-checkout set --no-cone $repo
+            git fetch --depth=1 origin main
+            git checkout main
+            Remove-Item .git -Recurse -Force
+            Set-Location ..
+          }
+
+      - name: Checkout TESV Flags File
+        if: steps.cache-ss.outputs.cache-hit != 'true'
+        run: |
+          cd .github/Papyrus/SRC
+          mkdir temp
+          cd temp
+          git init
+          git remote add origin https://github.com/Rukan/Grimy-Skyrim-Papyrus-Source.git
+          git sparse-checkout set --no-cone 'TESV_Papyrus_Flags.flg'
+          git fetch --depth=1 origin master
+          git checkout master
+          Remove-Item .git -Recurse -Force
+          mv TESV_Papyrus_Flags.flg ../TESV_Papyrus_Flags.flg
+          Set-Location ..
+          Remove-Item temp -Recurse -Force
+
+      - name: Run Caprica
+        shell: pwsh
+        run: .github/Caprica/Caprica.exe --game skyrim --import ".github/Papyrus/SRC;" --output "dist/Scripts" --flags=".github/Papyrus/SRC/TESV_Papyrus_Flags.flg" "${{ github.workspace }}/dist/Source/Scripts" -R -q
+
+      - name: Upload Compiled Scripts
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-papyrus
+          path: dist/Scripts
+
+  build-dll:
+    name: Build DLL
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    outputs:
+      artifact_name: ${{ steps.stage.outputs.artifact_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+
+      - name: Configure
+        run: xmake f -y -m release --build_papyrus=n
+
+      - name: Build
+        run: xmake -b -y DynamicDialogueReplacer
+
+      - name: Stage DLL files
+        id: stage
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path out/dll -Force | Out-Null
+
+          Copy-Item -Path 'build/windows/x64/release/DynamicDialogueReplacer.dll' -Destination out/dll/DynamicDialogueReplacer.dll -Force
+
+          if (Test-Path 'build/windows/x64/release/DynamicDialogueReplacer.pdb') {
+            Copy-Item -Path 'build/windows/x64/release/DynamicDialogueReplacer.pdb' -Destination out/dll/DynamicDialogueReplacer.pdb -Force
+          }
+
+          "artifact_name=built-dll" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.artifact_name }}
+          path: out/dll
+          if-no-files-found: error
+
+  package:
+    name: Package Release Artifact
+    needs:
+      - project-version
+      - compile-papyrus
+      - build-dll
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    outputs:
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download DLL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-dll.outputs.artifact_name }}
+          path: artifacts/built-dll
+
+      - name: Download compiled Papyrus
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-papyrus
+          path: artifacts/compiled-papyrus
+
+      - name: Package release artifact
+        id: package
+        run: |
+          $version = '${{ needs.project-version.outputs.project_version }}'
+          $artifactName = "Dynamic Dialogue Replacer - V$version"
+          $archivePath = Join-Path $env:RUNNER_TEMP "$artifactName.zip"
+          $stagingDir = Join-Path $env:RUNNER_TEMP $artifactName
+          $pluginDir = Join-Path $stagingDir 'SKSE\Plugins'
+
+          if (Test-Path $archivePath) {
+            Remove-Item $archivePath -Force
+          }
+
+          if (Test-Path $stagingDir) {
+            Remove-Item $stagingDir -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+          Copy-Item -Path dist\* -Destination $stagingDir -Recurse -Force
+
+          $skseDir = Join-Path $stagingDir 'SKSE'
+          if (Test-Path $skseDir -PathType Leaf) {
+            Remove-Item $skseDir -Force
+          }
+          New-Item -ItemType Directory -Path $skseDir -Force | Out-Null
+
+          if (Test-Path $pluginDir -PathType Leaf) {
+            Remove-Item $pluginDir -Force
+          }
+          New-Item -ItemType Directory -Path $pluginDir -Force | Out-Null
+          Copy-Item -Path artifacts\built-dll\* -Destination $pluginDir -Recurse -Force
+
+          $scriptsDir = Join-Path $stagingDir 'Scripts'
+          if (Test-Path $scriptsDir) {
+            Remove-Item $scriptsDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null
+          Copy-Item -Path artifacts\compiled-papyrus\* -Destination $scriptsDir -Recurse -Force
+
+          Compress-Archive -Path (Join-Path $stagingDir '*') -DestinationPath $archivePath
+
+          "artifact_name=$artifactName" >> $env:GITHUB_OUTPUT
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ runner.temp }}/${{ steps.package.outputs.artifact_name }}.zip
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs:
+      - package
+      - compare-version
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.compare-version.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for existing tag
+        id: tag
+        shell: bash
+        run: |
+          if git rev-parse "refs/tags/${{ needs.compare-version.outputs.version_tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download packaged artifact
+        if: steps.tag.outputs.exists == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.package.outputs.artifact_name }}
+          path: ${{ env.RELEASE_ASSET_DIR }}
+
+      - name: Create GitHub release
+        if: steps.tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.compare-version.outputs.version_tag }}
+          name: ${{ needs.compare-version.outputs.version_tag }}
+          files: ${{ env.RELEASE_ASSET_DIR }}/${{ needs.package.outputs.artifact_name }}.zip
+          generate_release_notes: true
