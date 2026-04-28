@@ -48,22 +48,30 @@ namespace Conditions
 		}
 		const auto quest = std::bit_cast<RE::TESQuest*>(a_item->data.functionData.params[0]);
 		const auto scriptVar = std::bit_cast<RE::BSString*>(a_item->data.functionData.params[1]);
-		const auto splits = Util::StringSplitToOwned(scriptVar->c_str(), "::");
-		const auto script = splits[0];
-		const auto var = splits[1];
-		float value;
-		if (const auto questObj = Script::GetScriptObject(quest, script.c_str())) {
-			value = Script::GetProperty<float>(questObj, var);
-		} else {
-			logger::error("Failed to get script object: {} from quest: {}", script.c_str(), quest->GetFormID());
-			value = 0.0f;
+		auto splits = Util::StringSplitToOwned(scriptVar->c_str(), "::");
+		if (splits.size() < 2) {
+			logger::error("GetVMQuestVariable: Invalid script variable format: {}. Expected format: <script>::<variable>", scriptVar->c_str());
+			return false;
+		}
+		const auto& script = splits[0];
+		auto& variable = splits[1];
+		variable = variable.ends_with("_var") ? variable.substr(0, variable.size() - 4) : variable;
+		auto questObj = Script::GetScriptObject(quest, script.c_str());
+		if (!questObj) {
+			logger::error("GetVMQuestVariable: Failed to get script object: {} from quest: {}", script, quest->GetFormID());
+			return false;
+		}
+		const auto value = Script::GetTrivialPropertySave<float>(questObj, variable.c_str());
+		if (!value) {
+			logger::error("GetVMQuestVariable: Failed to get property: {} from script object: {} from quest: {}", variable, script, quest->GetFormID());
+			return false;
 		}
 		const auto comparand = a_item->data.flags.global ? a_item->data.comparisonValue.g->value : a_item->data.comparisonValue.f;
 		switch (a_item->data.flags.opCode) {
 		case RE::CONDITION_ITEM_DATA::OpCode::kEqualTo:
 			return value == comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kNotEqualTo:
-			return value == comparand;
+			return value != comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kGreaterThan:
 			return value > comparand;
 		case RE::CONDITION_ITEM_DATA::OpCode::kGreaterThanOrEqualTo:
