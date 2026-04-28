@@ -35,7 +35,7 @@ namespace DDR
 	{
 		auto form = RE::TESForm::LookupByID<RE::Actor>(a_id);
 		auto mgEff = RE::TESForm::LookupByID<RE::EffectSetting>(a_magicEffect);
-		if (!form) {
+		if (!form || !mgEff) {
 			return -1;
 		}
 		return form->AsMagicTarget()->HasMagicEffect(mgEff);
@@ -81,7 +81,7 @@ namespace DDR
 	{
 		auto form = RE::TESForm::LookupByID(a_id);
 		if (!form) {
-			return "NONE";
+			return "";
 		}
 		std::string ret{ form->GetName() };
 		if (ret.empty()) {
