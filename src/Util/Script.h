@@ -34,26 +34,26 @@ namespace Script
     {
         auto vm = VM::GetSingleton();
         auto handle = GetHandle(a_form);
-    inline ObjectPtr GetScriptObject(const RE::TESForm* a_form, const char* a_class, bool a_create = false)
-    {
-        auto vm = VM::GetSingleton();
-        auto handle = GetHandle(a_form);
+        inline ObjectPtr GetScriptObject(const RE::TESForm* a_form, const char* a_class, bool a_create = false)
+        {
+            auto vm = VM::GetSingleton();
+            auto handle = GetHandle(a_form);
 
-        ObjectPtr object = nullptr;
-        bool found = vm->FindBoundObject(handle, a_class, object);
-        if (!found && a_create) {
-            vm->CreateObject2(a_class, object);
-            vm->BindObject(object, handle, false);
-        }
-        ObjectPtr object = nullptr;
-        bool found = vm->FindBoundObject(handle, a_class, object);
-        if (!found && a_create) {
-            vm->CreateObject2(a_class, object);
-            vm->BindObject(object, handle, false);
-        }
+            ObjectPtr object = nullptr;
+            bool found = vm->FindBoundObject(handle, a_class, object);
+            if (!found && a_create) {
+                vm->CreateObject2(a_class, object);
+                vm->BindObject(object, handle, false);
+            }
+            ObjectPtr object = nullptr;
+            bool found = vm->FindBoundObject(handle, a_class, object);
+            if (!found && a_create) {
+                vm->CreateObject2(a_class, object);
+                vm->BindObject(object, handle, false);
+            }
 
-        return object;
-    }
+            return object;
+        }
         return object;
     }
 
