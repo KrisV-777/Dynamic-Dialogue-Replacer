@@ -123,7 +123,7 @@ namespace DDR
 		return nullptr;
 	}
 
-	std::shared_ptr<TopicInfo> DialogueManager::FindReplacementResponse(RE::Character* a_speaker, RE::TESTopicInfo* a_topicInfo, RE::TESTopicInfo::ResponseData*)
+	std::shared_ptr<TopicInfo> DialogueManager::FindReplacementResponse(RE::Character* a_speaker, RE::TESTopicInfo* a_topicInfo, RE::TESTopicInfo::TESResponse*)
 	{
 		if (!a_topicInfo || !a_speaker) {
 			return nullptr;

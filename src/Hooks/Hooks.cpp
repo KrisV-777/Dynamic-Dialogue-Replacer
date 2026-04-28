@@ -41,7 +41,7 @@ namespace DDR
 		logger::info("Installed hooks");
 	}
 
-	int64_t Hooks::PopulateTopicInfo(int64_t a_1, RE::TESTopic* a_2, RE::TESTopicInfo* a_3, RE::Character* a_speaker, RE::TESTopicInfo::ResponseData* a_5)
+	int64_t Hooks::PopulateTopicInfo(int64_t a_1, RE::TESTopic* a_2, RE::TESTopicInfo* a_3, RE::Character* a_speaker, RE::TESTopicInfo::TESResponse* a_5)
 	{
 		_response.responseNumber = a_5->responseNumber;
 		if (_response.responseNumber == 1) {
@@ -69,7 +69,7 @@ namespace DDR
 		return _SetSubtitle(a_response, text.data(), a_3);
 	}
 
-	bool Hooks::ConstructResponse(RE::TESTopicInfo::ResponseData* a_response, char* a_filePath, RE::BGSVoiceType* a_voiceType, RE::TESTopic* a_topic, RE::TESTopicInfo* a_topicInfo)
+	bool Hooks::ConstructResponse(RE::TESTopicInfo::TESResponse* a_response, char* a_filePath, RE::BGSVoiceType* a_voiceType, RE::TESTopic* a_topic, RE::TESTopicInfo* a_topicInfo)
 	{
 		if (!_ConstructResponse(a_response, a_filePath, a_voiceType, a_topic, a_topicInfo)) {
 			return false;
