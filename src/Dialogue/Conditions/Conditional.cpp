@@ -1,43 +1,43 @@
 #include "Conditional.h"
 
-#include "Util/StringUtil.h"
 #include "Util/Script.h"
+#include "Util/StringUtil.h"
 
 namespace Conditions
 {
-	bool Conditional::ConditionsMet(RE::TESObjectREFR* a_subject, RE::TESObjectREFR* a_target) const
-	{
-		if (!_conditions) {
-			return true;
-		}
-		RE::ConditionCheckParams params{ a_subject, a_target };
-		auto ptr = _conditions->head;
-		while (ptr) {
-			bool result;
-			if (ptr->data.flags.isOR) {
-				result = ProgressOr(ptr, params);
-			} else {
-				result = IsTrue(ptr, params);
-				ptr = ptr->next;
-			}
-			if (!result) {
-				return false;
-			}
-		}
-		return true;
-	}
+    bool Conditional::ConditionsMet(RE::TESObjectREFR* a_subject, RE::TESObjectREFR* a_target) const
+    {
+        if (!_conditions) {
+            return true;
+        }
+        RE::ConditionCheckParams params{ a_subject, a_target };
+        auto ptr = _conditions->head;
+        while (ptr) {
+            bool result;
+            if (ptr->data.flags.isOR) {
+                result = ProgressOr(ptr, params);
+            } else {
+                result = IsTrue(ptr, params);
+                ptr = ptr->next;
+            }
+            if (!result) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-	bool Conditional::ProgressOr(RE::TESConditionItem*& a_item, RE::ConditionCheckParams& a_params)
-	{
-		bool res = false;
-		bool inOR = true;
-		while (a_item && inOR) {
-			res = res || IsTrue(a_item, a_params);
-			inOR = a_item->data.flags.isOR;
-			a_item = a_item->next;
-		}
-		return res;
-	}
+    bool Conditional::ProgressOr(RE::TESConditionItem*& a_item, RE::ConditionCheckParams& a_params)
+    {
+        bool res = false;
+        bool inOR = true;
+        while (a_item && inOR) {
+            res = res || IsTrue(a_item, a_params);
+            inOR = a_item->data.flags.isOR;
+            a_item = a_item->next;
+        }
+        return res;
+    }
 
 	bool Conditional::IsTrue(RE::TESConditionItem* a_item, RE::ConditionCheckParams& a_params)
 	{
@@ -85,4 +85,4 @@ namespace Conditions
 		}
 	}
 
-} // namespace Condition
+}  // namespace Condition

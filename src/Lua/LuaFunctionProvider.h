@@ -6,10 +6,10 @@
 
 namespace DDR
 {
-	class ILuaFunctionProvider
-	{
-	public:
-		virtual ~ILuaFunctionProvider() = default;
-		virtual void Register(sol::state& a_lua) = 0;
-	};
+    class ILuaFunctionProvider
+    {
+      public:
+        virtual ~ILuaFunctionProvider() = default;
+        virtual void Register(sol::state& a_lua) = 0;
+    };
 }
