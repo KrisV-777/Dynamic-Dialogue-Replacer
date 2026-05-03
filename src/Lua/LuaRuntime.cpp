@@ -24,7 +24,7 @@ namespace DDR
         }
     }
 
-    bool LuaRuntime::InitializeEnvironment(TextReplacement a_replacement)
+    bool LuaRuntime::InitializeEnvironment(LuaScript a_replacement)
     {
         sol::environment env{ _lua, sol::create, _lua.globals() };
         if (!env.valid()) {
@@ -60,7 +60,7 @@ namespace DDR
         return true;
     }
 
-    void LuaRuntime::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, ReplacementType a_type, uint32_t a_speakerId, uint32_t a_targetId)
+    void LuaRuntime::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, LuaScript::Type a_type, uint32_t a_speakerId, uint32_t a_targetId)
     {
         for (auto& [replacement, environment] : _scripts) {
             if (!replacement.CanApplyReplacement(a_speaker, a_target, a_type)) {

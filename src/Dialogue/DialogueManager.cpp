@@ -99,7 +99,7 @@ namespace DDR
         size_t scripts = 0;
         for (const auto&& it : node) {
             try {
-                TextReplacement repl{ it };
+                LuaScript repl{ it };
                 if (!_luaRuntime.InitializeEnvironment(repl)) {
                     logger::info("Line {}: Failed to initialize environment for script {}", 1 + it.Mark().line, repl.GetScript());
                 } else {
@@ -214,7 +214,7 @@ namespace DDR
         _tempTopicReplacements.erase(a_topicId);
     }
 
-    void DialogueManager::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, ReplacementType a_type)
+    void DialogueManager::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type)
     {
         if (a_text.empty()) {
             return;

@@ -3,7 +3,7 @@
 #include "Conditions/RefMap.h"
 #include "DialoguePaths.h"
 #include "Lua/LuaRuntime.h"
-#include "TextReplacement.h"
+#include "Lua/LuaScript.h"
 #include "Topic.h"
 #include "TopicInfo.h"
 #include "Util/Singleton.h"
@@ -23,7 +23,7 @@ namespace DDR
 
         std::string AddReplacementTopic(RE::FormID a_topicId, std::string a_text);
         void RemoveReplacementTopic(RE::FormID a_topicId, std::string a_key);
-        void ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, ReplacementType a_type);
+        void ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type);
 
       private:
         size_t ParseResponses(const YAML::Node& a_node, const Conditions::RefMap& a_refMap);

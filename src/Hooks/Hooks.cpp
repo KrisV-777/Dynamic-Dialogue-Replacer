@@ -65,7 +65,7 @@ namespace DDR
         } else {
             text = a_text;
         }
-        DialogueManager::GetSingleton()->ApplyTextReplacements(text, _response.speaker, ReplacementType::Response);
+        DialogueManager::GetSingleton()->ApplyTextReplacements(text, _response.speaker, LuaScript::Type::Response);
         return _SetSubtitle(a_response, text.data(), a_3);
     }
 

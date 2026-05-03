@@ -43,7 +43,7 @@ namespace DDR
                             break;
                         }
                     }
-                    manager->ApplyTextReplacements(text, speaker, ReplacementType::Topic);
+                    manager->ApplyTextReplacements(text, speaker, LuaScript::Type::Topic);
                     activeTopic->topicText = text;
                     cache[formId] = text;
                 }
