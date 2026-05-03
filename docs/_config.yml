@@ -22,9 +22,6 @@ footer_content: "Dynamic Dialogue Replacer &mdash; released under <a href=\"../C
 # Default heading anchors
 heading_anchors: true
 
-# Colour scheme (remove or change to "dark" for a dark theme)
-color_scheme: light
-
 # Callout titles (used in blockquotes with > **Note** syntax)
 callouts:
   note:
