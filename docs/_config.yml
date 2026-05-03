@@ -1,31 +1,20 @@
 title: Dynamic Dialogue Replacer
 description: SKSE64 plugin for runtime Skyrim dialogue replacement
-remote_theme: "jekyll/minima@1e8a445"
+remote_theme: pages-themes/slate@v0.2.0
+plugins:
+- jekyll-remote-theme
 
-# GitHub Pages URL — update if the repo is renamed or uses a custom domain
 url: "https://krisv-777.github.io"
 baseurl: "/Dynamic-Dialogue-Replacer"
-
-# Aux links shown in the top-right corner
 aux_links:
   "GitHub":
     - "https://github.com/KrisV-777/Dynamic-Dialogue-Replacer"
-
 aux_links_new_tab: true
 
-# Search
 search_enabled: true
-
-# Footer
 footer_content: "Dynamic Dialogue Replacer &mdash; released under <a href=\"../COPYING\">GPL-3.0</a>."
-
-# Default heading anchors
 heading_anchors: true
 
-minima:
-  skin: auto
-
-# Callout titles (used in blockquotes with > **Note** syntax)
 callouts:
   note:
     color: blue
