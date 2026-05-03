@@ -2,7 +2,7 @@ set_xmakever("2.9.5")
 
 -- Globals
 PROJECT_NAME = "DynamicDialogueReplacer"
-PROJECT_VERSION = "1.4.0"
+PROJECT_VERSION = "1.4.1"
 
 -- Project
 set_project(PROJECT_NAME)
