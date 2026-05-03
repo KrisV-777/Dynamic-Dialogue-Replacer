@@ -9,8 +9,8 @@ namespace DDR
       _speakerId(Util::FormFromString(a_node["speaker"].as<std::string>(""))),
       _targetId(Util::FormFromString(a_node["target"].as<std::string>(""))),
       _type(magic_enum::enum_cast<Type>(a_node["type"].as<int>())
-              .or_else([]() -> std::optional<Type> { throw std::runtime_error("Property 'type' is missing or invalid"); })
-              .value())
+                .or_else([]() -> std::optional<Type> { throw std::runtime_error("Property 'type' is missing or invalid"); })
+                .value())
     {
         if (_script.empty()) {
             throw std::runtime_error("Failed to load script");

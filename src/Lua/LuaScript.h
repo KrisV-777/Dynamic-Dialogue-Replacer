@@ -13,7 +13,7 @@ namespace DDR
             Total
         };
 
-        public:
+      public:
         LuaScript(const YAML::Node& a_node);
         ~LuaScript() = default;
 
