@@ -98,15 +98,25 @@ namespace DDR
 
     std::string FileFunctionProvider::ReadTextFile(const std::string& a_relativePath)
     {
-        const auto path = ResolveDataFilePath(a_relativePath);
-        return ReadTextFileFromPath(path);
+        try {
+            const auto path = ResolveDataFilePath(a_relativePath);
+            return ReadTextFileFromPath(path);
+        } catch (const std::exception& ex) {
+            logger::error("Error reading text file '{}': {}", a_relativePath, ex.what());
+            return {};
+        }
     }
 
     sol::object FileFunctionProvider::ReadJsonFile(sol::this_state a_state, const std::string& a_relativePath)
     {
-        const auto path = ResolveDataFilePath(a_relativePath);
-        const auto content = ReadTextFileFromPath(path);
-        const auto parsed = nlohmann::json::parse(content);
-        return JsonToLua(a_state, parsed);
+        try {
+            const auto path = ResolveDataFilePath(a_relativePath);
+            const auto content = ReadTextFileFromPath(path);
+            const auto parsed = nlohmann::json::parse(content);
+            return JsonToLua(a_state, parsed);
+        } catch (const std::exception& ex) {
+            logger::error("Error reading JSON file '{}': {}", a_relativePath, ex.what());
+            return sol::make_object(sol::state_view{ a_state }, sol::lua_nil);
+        }
     }
 }
