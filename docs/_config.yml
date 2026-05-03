@@ -1,7 +1,7 @@
 title: DDR
 description: SKSE64 plugin for runtime Skyrim dialogue replacement
 remote_theme: just-the-docs/just-the-docs
-color_scheme: light
+color_scheme: dark
 
 url: "https://krisv-777.github.io"
 baseurl: "/Dynamic-Dialogue-Replacer"
