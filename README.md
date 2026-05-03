@@ -1,18 +1,18 @@
 # Dynamic Dialogue Replacer
 
-SKSE plugin that allows for runtime replacement of dialogue subtitles and voice files. 
+SKSE64 plugin for runtime replacement of dialogue subtitles and voice files.
 
-For documentation on how to use this plugin, see the [wiki](https://github.com/KrisV-777/Dynamic-Dialogue-Replacer/wiki).  
+For documentation on how to use this plugin, see the [wiki](https://krisv-777.github.io/Dynamic-Dialogue-Replacer/) or [docs/index.md](docs/index.md).  
 The Nexus Mods mirror can be found [here](https://www.nexusmods.com/skyrimspecialedition/mods/135618).
 
-## Requirements
+## Building
+
+### Requirements
 * [xmake](https://xmake.io/#/)
 	* Add this to your `PATH`
 * [PowerShell](https://github.com/PowerShell/PowerShell/releases/latest)
 * [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
 	* Desktop development with C++
-
-## Building
 
 ### Clone
 ```
@@ -49,7 +49,7 @@ xmake
 
 ### Install
 
-If `install_path` and `auto_install` are configured, files will be automatically coppied to `install_path` after a successful build. Otherwise install can be run manually using:
+If `install_path` and `auto_install` are configured, files will be automatically copied to `install_path` after a successful build. Otherwise install can be run manually using:
 ```sh
 xmake install -o INSTALLDIR
 ```
