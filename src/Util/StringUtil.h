@@ -30,6 +30,41 @@ namespace Util
 #undef STR_TRANSFORM
 #pragma warning(pop)
 
+    inline bool IEquals(std::string_view a_lhs, std::string_view a_rhs)
+    {
+        if (a_lhs.size() != a_rhs.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < a_lhs.size(); ++i) {
+            if (std::tolower(static_cast<unsigned char>(a_lhs[i])) != std::tolower(static_cast<unsigned char>(a_rhs[i]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    inline std::string TrimCopy(std::string_view a_text)
+    {
+        while (!a_text.empty() && std::isspace(static_cast<unsigned char>(a_text.front()))) {
+            a_text.remove_prefix(1);
+        }
+        while (!a_text.empty() && std::isspace(static_cast<unsigned char>(a_text.back()))) {
+            a_text.remove_suffix(1);
+        }
+        return std::string{ a_text };
+    }
+
+    inline std::string CapitalizeFirst(std::string a_text)
+    {
+        for (char& ch : a_text) {
+            if (std::isalpha(static_cast<unsigned char>(ch))) {
+                ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+                break;
+            }
+        }
+        return a_text;
+    }
+
     inline std::vector<std::string_view> StringSplit(const std::string_view& a_view, const std::string_view& a_delim)
     {
         namespace views = std::ranges::views;

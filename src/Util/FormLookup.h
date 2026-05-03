@@ -71,4 +71,14 @@ namespace Util
         }
     }
 
+    template <typename T>
+    static inline T* LookupForm(std::string_view a_string)
+    {
+        auto ref = Util::FormFromString<T>(a_string);
+        if (!ref) {
+            ref = RE::TESForm::LookupByEditorID<T>(a_string);
+        }
+        return ref;
+    }
+
 }  // namespace Util

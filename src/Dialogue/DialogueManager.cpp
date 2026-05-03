@@ -214,7 +214,7 @@ namespace DDR
         _tempTopicReplacements.erase(a_topicId);
     }
 
-    void DialogueManager::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type)
+    void DialogueManager::ApplyLuaScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type)
     {
         if (a_text.empty()) {
             return;
@@ -223,7 +223,7 @@ namespace DDR
         const auto target = actor ? GetDialogueTarget(actor) : nullptr;
         const uint32_t speakerId = actor ? actor->GetFormID() : 0;
         const uint32_t targetId = target ? target->GetFormID() : 0;
-        _luaRuntime.ApplyTextReplacements(a_text, a_speaker, target, a_type, speakerId, targetId);
+        _luaRuntime.ApplyScripts(a_text, a_speaker, target, a_type, speakerId, targetId);
     }
 
 }  // namespace DDR

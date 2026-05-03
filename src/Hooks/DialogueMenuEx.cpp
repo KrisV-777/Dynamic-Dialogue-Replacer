@@ -1,6 +1,7 @@
 #include "DialogueMenuEx.h"
 
 #include "Dialogue/DialogueManager.h"
+#include "Dialogue/TextReplacement.h"
 
 namespace DDR
 {
@@ -43,7 +44,8 @@ namespace DDR
                             break;
                         }
                     }
-                    manager->ApplyTextReplacements(text, speaker, LuaScript::Type::Topic);
+                    manager->ApplyLuaScripts(text, speaker, LuaScript::Type::Topic);
+                    TextReplacement::ApplyTextReplacement(text);
                     activeTopic->topicText = text;
                     cache[formId] = text;
                 }

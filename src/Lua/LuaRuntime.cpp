@@ -60,7 +60,7 @@ namespace DDR
         return true;
     }
 
-    void LuaRuntime::ApplyTextReplacements(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, LuaScript::Type a_type, uint32_t a_speakerId, uint32_t a_targetId)
+    void LuaRuntime::ApplyScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, LuaScript::Type a_type, uint32_t a_speakerId, uint32_t a_targetId)
     {
         for (auto& [replacement, environment] : _scripts) {
             if (!replacement.CanApplyReplacement(a_speaker, a_target, a_type)) {
