@@ -72,7 +72,7 @@ Same parsing rules as `speaker`.
 2. DDR creates an isolated Lua environment for the script (state is preserved per script between calls).
 3. DDR loads the script file and verifies `replace` exists.
 4. On each dialogue line, DDR checks `type`/`speaker`/`target` filters.
-5. DDR sets runtime globals (`context`, `speaker_id`, `target_id`) and calls `replace(text)`.
+5. DDR sets runtime globals (`context`, `speaker_id`, `target_id`, `source_id`, `source_plugin`) and calls `replace(text)`.
 6. If a string is returned, it becomes the new text passed to the next script.
 
 ## Runtime Variables
@@ -82,11 +82,18 @@ DDR sets these globals in each script environment before `replace` runs:
 - `context`: `1` for topic context, `2` for response context
 - `speaker_id`: runtime speaker form ID, or `0`
 - `target_id`: runtime target form ID, or `0`
+- `source_id`: form ID of the dialogue record currently being processed, or `0`
+- `source_plugin`: filename of the plugin providing the dialogue record, or an empty string
 
 `context` maps to the runtime call site, not the YAML `type` filter directly:
 
 - `1`: topic text pass
 - `2`: topic info response text pass
+
+`source_id` and `source_plugin` refer to the dialogue record currently being processed:
+
+- `context == 1`: the topic (`TESTopic`) providing the player dialogue option
+- `context == 2`: the topic info (`TESTopicInfo`) providing the NPC response
 
 ## Built-in Functions
 

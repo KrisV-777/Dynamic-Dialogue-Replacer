@@ -60,7 +60,15 @@ namespace DDR
         return true;
     }
 
-    void LuaRuntime::ApplyScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, LuaScript::Type a_type, uint32_t a_speakerId, uint32_t a_targetId)
+    void LuaRuntime::ApplyScripts(
+        std::string& a_text,
+        RE::TESObjectREFR* a_speaker,
+        RE::TESObjectREFR* a_target,
+        LuaScript::Type a_type,
+        uint32_t a_speakerId,
+        uint32_t a_targetId,
+        uint32_t a_sourceId,
+        const std::string& a_sourcePlugin)
     {
         for (auto& [replacement, environment] : _scripts) {
             if (!replacement.CanApplyReplacement(a_speaker, a_target, a_type)) {
@@ -71,6 +79,8 @@ namespace DDR
                 environment["context"] = std::to_underlying(a_type);
                 environment["speaker_id"] = a_speakerId;
                 environment["target_id"] = a_targetId;
+                environment["source_id"] = a_sourceId;
+                environment["source_plugin"] = a_sourcePlugin;
                 sol::protected_function_result result = environment["replace"](a_text);
                 if (!result.valid()) {
                     sol::error err = result;

@@ -44,6 +44,7 @@ namespace DDR
     int64_t Hooks::PopulateTopicInfo(int64_t a_1, RE::TESTopic* a_2, RE::TESTopicInfo* a_3, RE::Character* a_speaker, RE::TESTopicInfo::TESResponse* a_5)
     {
         _response.responseNumber = a_5->responseNumber;
+        _response.source = a_3;
         if (_response.responseNumber == 1) {
             _response.response = DialogueManager::GetSingleton()->FindReplacementResponse(a_speaker, a_3, a_5);
             _response.speaker = a_speaker;
@@ -65,7 +66,7 @@ namespace DDR
         } else {
             text = a_text;
         }
-        DialogueManager::GetSingleton()->ApplyLuaScripts(text, _response.speaker, LuaScript::Type::Response);
+        DialogueManager::GetSingleton()->ApplyLuaScripts(text, _response.speaker, LuaScript::Type::Response, _response.source);
         return _SetSubtitle(a_response, text.data(), a_3);
     }
 

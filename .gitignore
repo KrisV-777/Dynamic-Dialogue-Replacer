@@ -11,3 +11,4 @@ dist/SKSE/Plugins/*.dll
 dist/SKSE/Plugins/*.pdb
 
 .env
+*.kate-swp

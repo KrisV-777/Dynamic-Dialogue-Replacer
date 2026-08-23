@@ -20,6 +20,7 @@ namespace DDR
         struct Response
         {
             RE::Character* speaker{ nullptr };
+            RE::TESForm* source{ nullptr };
             std::shared_ptr<TopicInfo> response{ nullptr };
             int32_t responseNumber{ -1 };
         };
