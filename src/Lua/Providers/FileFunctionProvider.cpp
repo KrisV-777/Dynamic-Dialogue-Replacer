@@ -21,8 +21,8 @@ namespace DDR
                 throw std::runtime_error("Absolute paths are not allowed");
             }
 
-            const fs::path root = fs::weakly_canonical(fs::path{ DIRECTORY_PATH });
-            const fs::path candidate = fs::weakly_canonical(root / relativePath);
+            const fs::path root{ DIRECTORY_PATH };
+            const fs::path candidate = (root / relativePath).lexically_normal();
             const fs::path relativeToRoot = candidate.lexically_relative(root);
 
             if (relativeToRoot.empty() || *relativeToRoot.begin() == "..") {
