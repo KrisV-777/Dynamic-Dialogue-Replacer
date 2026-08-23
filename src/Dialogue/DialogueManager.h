@@ -23,7 +23,7 @@ namespace DDR
 
         std::string AddReplacementTopic(RE::FormID a_topicId, std::string a_text);
         void RemoveReplacementTopic(RE::FormID a_topicId, std::string a_key);
-        void ApplyLuaScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type);
+        void ApplyLuaScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, LuaScript::Type a_type, RE::TESForm* a_source = nullptr);
 
       private:
         size_t ParseResponses(const YAML::Node& a_node, const Conditions::RefMap& a_refMap);

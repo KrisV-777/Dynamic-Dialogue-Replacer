@@ -18,7 +18,15 @@ namespace DDR
         ~LuaRuntime() { _lua.collect_garbage(); }
 
         bool InitializeEnvironment(LuaScript a_replacement);
-        void ApplyScripts(std::string& a_text, RE::TESObjectREFR* a_speaker, RE::TESObjectREFR* a_target, LuaScript::Type a_type, uint32_t a_speakerId, uint32_t a_targetId);
+        void ApplyScripts(
+          std::string& a_text,
+          RE::TESObjectREFR* a_speaker,
+          RE::TESObjectREFR* a_target,
+          LuaScript::Type a_type,
+          uint32_t a_speakerId,
+          uint32_t a_targetId,
+          uint32_t a_sourceId,
+          const std::string& a_sourcePlugin);
 
       private:
         void RegisterFunctions();
